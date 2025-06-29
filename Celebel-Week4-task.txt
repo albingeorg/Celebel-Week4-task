@@ -1,0 +1,103 @@
+// Weather Observation Station 8 : Query the two cities in STATION with the shortest and longest CITY names, as well as their respective lengths
+
+SELECT DISTINCT CITY
+FROM STATION
+WHERE LOWER(SUBSTR(CITY, 1, 1)) IN ('a', 'e', 'i', 'o', 'u')
+  AND LOWER(SUBSTR(CITY, LENGTH(CITY), 1)) IN ('a', 'e', 'i', 'o', 'u');
+
+//Population Density Difernece : Query the difference between the maximum and minimum populations in CITY.
+
+select max(POPULATION) - min(POPULATION) from CITY;
+
+//Weather Observation Station 19 : Query the Euclidean Distance between points and and format your answer to display decimal digits.
+SELECT CAST(
+         SQRT(
+           POWER(MAX(LAT_N) - MIN(LAT_N), 2) +
+           POWER(MAX(LONG_W) - MIN(LONG_W), 2)
+         ) 
+       AS DECIMAL(10,4)) AS DISTANCE
+FROM STATION;
+
+// Weather Observation Station 20 :Query the median of the Northern Latitudes (LAT_N) from STATION and round your answer to decimal places.
+
+SELECT CAST(
+         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY LAT_N)
+         OVER () 
+       AS DECIMAL(10,4)) AS MEDIAN_LAT_N
+FROM STATION
+FETCH FIRST 1 ROW ONLY;
+
+
+//African Cities : Query the names of all cities where the CONTINENT is 'Africa'.
+
+SELECT CITY.NAME
+FROM CITY
+JOIN COUNTRY
+  ON CITY.COUNTRYCODE = COUNTRY.CODE
+WHERE COUNTRY.CONTINENT = 'Africa';
+
+//Report : Write a SQL Query to create a report
+
+SELECT 
+  CASE 
+    WHEN g.Grade < 8 THEN 'NULL'
+    ELSE s.Name
+  END AS Name,
+  g.Grade,
+  s.Marks
+FROM Students s
+JOIN Grades g
+  ON s.Marks BETWEEN g.Min_Mark AND g.Max_Mark
+ORDER BY 
+  g.Grade DESC,
+  CASE 
+    WHEN g.Grade >= 8 THEN s.Name
+    ELSE NULL
+  END ASC,
+  CASE 
+    WHEN g.Grade < 8 THEN s.Marks
+    ELSE NULL
+  END ASC;
+
+//Top Compettitors : Write SQL Query to find out top competitors
+
+SELECT s.hacker_id, h.name
+FROM Submissions s
+JOIN Challenges c ON s.challenge_id = c.challenge_id
+JOIN Difficulty d ON c.difficulty_level = d.difficulty_level
+JOIN Hackers h ON s.hacker_id = h.hacker_id
+WHERE s.score = d.score
+GROUP BY s.hacker_id, h.name
+HAVING COUNT(DISTINCT s.challenge_id) > 1
+ORDER BY COUNT(DISTINCT s.challenge_id) DESC, s.hacker_id ASC;
+
+//Ollivander's Inventory : Question based on Joins
+
+SELECT w.id, wp.age, w.coins_needed, w.power
+FROM Wands w
+JOIN Wands_Property wp ON w.code = wp.code
+WHERE wp.is_evil = 0
+  AND w.coins_needed = (
+    SELECT MIN(w2.coins_needed)
+    FROM Wands w2
+    JOIN Wands_Property wp2 ON w2.code = wp2.code
+    WHERE wp2.is_evil = 0
+      AND wp2.age = wp.age
+      AND w2.power = w.power
+  )
+ORDER BY w.power DESC, wp.age DESC;
+
+
+//Contest Leaderboard : Question based on joins
+
+SELECT h.hacker_id, h.name, SUM(max_scores.max_score) AS total_score
+FROM Hackers h
+JOIN (
+    SELECT s.hacker_id, s.challenge_id, MAX(s.score) AS max_score
+    FROM Submissions s
+    GROUP BY s.hacker_id, s.challenge_id
+) AS max_scores
+ON h.hacker_id = max_scores.hacker_id
+GROUP BY h.hacker_id, h.name
+HAVING SUM(max_scores.max_score) > 0
+ORDER BY total_score DESC, h.hacker_id ASC;
